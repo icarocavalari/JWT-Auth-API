@@ -1,0 +1,2 @@
+jwt.secret-key= "your-key-here" example: HUcCM2xeIyzCgkiqJrP3ug/r7/2ABJnVbV7pxwONqbg=
+jwt.expiration.time=900000
