@@ -1,2 +1,11 @@
-jwt.secret-key= "your-key-here" example: HUcCM2xeIyzCgkiqJrP3ug/r7/2ABJnVbV7pxwONqbg=
+# Chave secreta para assinar os tokens JWT (Base64, mínimo de 256 bits).
+# Gere a sua com: openssl rand -base64 32
+jwt.secret-key=sua-chave-aqui
+
+# Tempo de expiração do token em milissegundos (900000 = 15 minutos)
 jwt.expiration.time=900000
+
+# Conexão com o MySQL definido no compose.yaml
+spring.datasource.url=jdbc:mysql://localhost:3307/taskdb?serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false
+spring.datasource.username=root
+spring.datasource.password=secret
