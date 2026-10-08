@@ -37,6 +37,15 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     private Date updatedAt;
 
+    protected User() {
+    }
+
+    public User(String fullName, String email, String encodedPassword) {
+        this.fullName = fullName;
+        this.email = email;
+        this.password = encodedPassword;
+    }
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

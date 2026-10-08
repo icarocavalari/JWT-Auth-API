@@ -21,12 +21,8 @@ public class UserServiceTest {
 
     @Test
     void shouldReturnCorrectNumberOfUsersAndCorrectData() {
-        User first = new User();
-        first.setEmail("first@example.com");
-        first.setFullName("First user test");
-        User second = new User();
-        second.setEmail("second@example.com");
-        second.setFullName("Second user test");
+        User first = new User("First user test", "first@example.com", "123123");
+        User second = new User("Second user test", "second@example.com", "321321");
 
         when(userRepo.findAll()).thenReturn(List.of(first, second));
 

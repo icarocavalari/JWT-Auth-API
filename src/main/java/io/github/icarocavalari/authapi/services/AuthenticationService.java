@@ -2,6 +2,7 @@ package io.github.icarocavalari.authapi.services;
 
 import io.github.icarocavalari.authapi.dtos.LoginUserDto;
 import io.github.icarocavalari.authapi.dtos.RegisterUserDto;
+import io.github.icarocavalari.authapi.dtos.UserDto;
 import io.github.icarocavalari.authapi.entities.User;
 import io.github.icarocavalari.authapi.exceptions.EmailAlreadyExistsException;
 import io.github.icarocavalari.authapi.repositories.UserRepository;
@@ -24,17 +25,13 @@ public class AuthenticationService {
         this.authenticationManager = authManager;
     }
 
-    public User signup(RegisterUserDto input) {
+    public UserDto signup(RegisterUserDto input) {
         if (userRepository.findByEmail(input.email()).isPresent()) {
             throw new EmailAlreadyExistsException("Email Already exists");
         }
 
-        User user = new User();
-        user.setFullName(input.fullName());
-        user.setEmail(input.email());
-        user.setPassword(passwordEncoder.encode(input.password()));
-
-        return userRepository.save(user);
+        User user = userRepository.save(new User(input.fullName(), input.email(), passwordEncoder.encode(input.password())));
+        return new UserDto(user.getId(), user.getUsername(), user.getFullName(), user.getCreatedAt());
     }
 
     public User authenticate(LoginUserDto user) {

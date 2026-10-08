@@ -2,10 +2,13 @@ package io.github.icarocavalari.authapi.controllers;
 
 import io.github.icarocavalari.authapi.dtos.LoginUserDto;
 import io.github.icarocavalari.authapi.dtos.RegisterUserDto;
+import io.github.icarocavalari.authapi.dtos.UserDto;
 import io.github.icarocavalari.authapi.entities.User;
 import io.github.icarocavalari.authapi.responses.LoginResponse;
 import io.github.icarocavalari.authapi.services.AuthenticationService;
 import io.github.icarocavalari.authapi.services.JwtService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,10 +27,10 @@ public class AuthenticationController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<User> register(@RequestBody RegisterUserDto registerUserDto) {
-        User registeredUser = authenticationService.signup(registerUserDto);
+    public ResponseEntity<UserDto> register(@RequestBody RegisterUserDto registerUserDto) {
+        UserDto registeredUser = authenticationService.signup(registerUserDto);
 
-        return ResponseEntity.ok(registeredUser);
+        return ResponseEntity.status(HttpStatus.CREATED).body(registeredUser);
     }
 
     @PostMapping("/login")

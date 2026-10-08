@@ -14,10 +14,7 @@ public class JwtServiceTest {
     long expiration = 9000000;
 
     @BeforeEach void createUserAndJwtService() {
-        user = new User();
-        user.setFullName("username");
-        user.setEmail("test@example.com");
-
+        user = new User("username", "test@example.com", "123123");
         jwtService = new JwtService(secretKey, expiration);
     }
 
@@ -62,9 +59,7 @@ public class JwtServiceTest {
     void shouldRejectTokenWithWrongUser() {
         String jwt = jwtService.generateToken(user);
 
-        User wrongUser = new User();
-        wrongUser.setFullName("Full name");
-        wrongUser.setEmail("wrongemail@wrong.com");
+        User wrongUser = new User("Full name", "wrongemail@wrong.com", "123123");
 
         assertThat(jwtService.isTokenValid(jwt, wrongUser)).isFalse();
     }

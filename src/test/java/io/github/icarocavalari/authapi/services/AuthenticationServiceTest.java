@@ -39,7 +39,11 @@ public class AuthenticationServiceTest {
     void shouldRejectDuplicateEmailAndDoNotSaveData() {
         RegisterUserDto input = new RegisterUserDto("test@example.com", "Testing Method", "plainpassword");
 
-        when(userRepository.findByEmail(input.email())).thenReturn(Optional.of(new User()));
+        User user = new User(input.fullName(), input.email(), passwordEncoder.encode(input.password()));
+        when(
+                userRepository.findByEmail(input.email()))
+                .thenReturn(
+                Optional.of(user));
 
         assertThatThrownBy(() -> {
             authenticationService.signup(input);
@@ -53,6 +57,7 @@ public class AuthenticationServiceTest {
         RegisterUserDto input = new RegisterUserDto("test@example.com", "Testing Method", "plainpassword");
 
         when(passwordEncoder.encode("plainpassword")).thenReturn("drowssapnialp");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         authenticationService.signup(input);
 
@@ -66,9 +71,7 @@ public class AuthenticationServiceTest {
     @Test
     void shouldReturnUserCorrectlyAuthenticated() {
         LoginUserDto input = new LoginUserDto("test@example.com", "drowssapnialp");
-        User user = new User();
-        user.setEmail(input.email());
-        user.setPassword(input.password());
+        User user = new User(input.email(), "joaozinho123", input.password());
 
         when(userRepository.findByEmail(input.email())).thenReturn(Optional.of(user));
         assertThat(userRepository.findByEmail(input.email())).isEqualTo(Optional.of(user));
