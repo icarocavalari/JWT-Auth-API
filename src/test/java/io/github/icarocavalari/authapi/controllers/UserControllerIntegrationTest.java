@@ -1,5 +1,6 @@
 package io.github.icarocavalari.authapi.controllers;
 
+import io.github.icarocavalari.authapi.TestcontainersConfiguration;
 import io.github.icarocavalari.authapi.dtos.LoginUserDto;
 import io.github.icarocavalari.authapi.dtos.RegisterUserDto;
 import io.github.icarocavalari.authapi.entities.User;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @AutoConfigureMockMvc
 @SpringBootTest
+@Import(TestcontainersConfiguration.class)
 public class UserControllerIntegrationTest {
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper mapper;
@@ -86,5 +89,20 @@ public class UserControllerIntegrationTest {
                 .andExpect(jsonPath("$.createdAt").exists())
                 .andExpect(jsonPath("$.password").doesNotExist());
 
+    }
+
+    @Test
+    @Transactional
+    void shouldNotRegisterUserWithEmailAlreadyUsed() throws Exception {
+        RegisterUserDto input = new RegisterUserDto("enzogomes@gmail.com", "Enzo Gomes", "enzo123");
+
+        userRepo.save(new User(input.fullName(), input.email(), passwordEncoder.encode(input.password())));
+
+        RegisterUserDto sameEmail = new RegisterUserDto("enzogomes@gmail.com", "Gomes Enzo", "123enzo");
+
+        mockMvc.perform(post("/auth/signup")
+                        .content(mapper.writeValueAsString(sameEmail))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isConflict());
     }
 }
