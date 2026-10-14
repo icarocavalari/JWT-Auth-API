@@ -2,8 +2,10 @@ package io.github.icarocavalari.authapi.services;
 
 import io.github.icarocavalari.authapi.dtos.LoginUserDto;
 import io.github.icarocavalari.authapi.dtos.RegisterUserDto;
+import io.github.icarocavalari.authapi.entities.Role;
 import io.github.icarocavalari.authapi.entities.User;
 import io.github.icarocavalari.authapi.exceptions.EmailAlreadyExistsException;
+import io.github.icarocavalari.authapi.repositories.RoleRepository;
 import io.github.icarocavalari.authapi.repositories.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,8 +19,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 
+import static io.github.icarocavalari.authapi.entities.RoleEnum.USER;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,6 +35,9 @@ public class AuthenticationServiceTest {
     @Mock
     AuthenticationManager authenticationManager;
 
+    @Mock
+    RoleRepository roleRepo;
+
     @InjectMocks
     AuthenticationService authenticationService;
 
@@ -39,11 +45,9 @@ public class AuthenticationServiceTest {
     void shouldRejectDuplicateEmailAndDoNotSaveData() {
         RegisterUserDto input = new RegisterUserDto("test@example.com", "Testing Method", "plainpassword");
 
-        User user = new User(input.fullName(), input.email(), passwordEncoder.encode(input.password()));
-        when(
-                userRepository.findByEmail(input.email()))
-                .thenReturn(
-                Optional.of(user));
+        User user = new User(input.fullName(), input.email(), input.password());
+
+        when(userRepository.findByEmail(input.email())).thenReturn(Optional.of(user));
 
         assertThatThrownBy(() -> {
             authenticationService.signup(input);
@@ -57,6 +61,7 @@ public class AuthenticationServiceTest {
         RegisterUserDto input = new RegisterUserDto("test@example.com", "Testing Method", "plainpassword");
 
         when(passwordEncoder.encode("plainpassword")).thenReturn("drowssapnialp");
+        when(roleRepo.findByName(USER)).thenReturn(Optional.of(new Role(USER)));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         authenticationService.signup(input);
@@ -71,10 +76,12 @@ public class AuthenticationServiceTest {
     @Test
     void shouldReturnUserCorrectlyAuthenticated() {
         LoginUserDto input = new LoginUserDto("test@example.com", "drowssapnialp");
-        User user = new User(input.email(), "joaozinho123", input.password());
+        User user = new User("joaozinho123", input.email(), input.password());
 
         when(userRepository.findByEmail(input.email())).thenReturn(Optional.of(user));
-        assertThat(userRepository.findByEmail(input.email())).isEqualTo(Optional.of(user));
+
+        User authenticatedUser = authenticationService.authenticate(input);
+        assertThat(authenticatedUser).isSameAs(user);
     }
 
     @Test
@@ -97,5 +104,22 @@ public class AuthenticationServiceTest {
         assertThatThrownBy(() -> {
             authenticationService.authenticate(user);
         }).isInstanceOf(BadCredentialsException.class);
+    }
+
+    @Test
+    void shouldHaveUserRoleAfterRegistration() {
+        RegisterUserDto input = new RegisterUserDto("test@example.com", "Testing Method", "plainpassword");
+
+        when(roleRepo.findByName(USER)).thenReturn(Optional.of(new Role(USER)));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        authenticationService.signup(input);
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+        User savedUser = captor.getValue();
+
+        assertThat(savedUser.getRoles()).extracting(Role::getName).contains(USER);
+
     }
 }

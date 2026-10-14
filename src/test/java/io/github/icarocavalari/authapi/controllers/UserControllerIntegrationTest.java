@@ -11,12 +11,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
+
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -68,19 +72,9 @@ public class UserControllerIntegrationTest {
         RegisterUserDto input = new RegisterUserDto(
                 "joaodasilva@gmail.com", "Joao Da Silva", "joao123");
 
-        User savedUser = userRepo.save(
-                new User(input.fullName(), input.email(), passwordEncoder.encode(input.password())));
+        String token = registerLogInAndAuthenticateUser(input);
 
-        LoginUserDto loginUserDto = new LoginUserDto(savedUser.getUsername(), input.password());
-
-        MockHttpServletResponse response = mockMvc.perform(post("/auth/login")
-                .content(mapper.writeValueAsString(loginUserDto))
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andReturn().getResponse();
-
-        String body = response.getContentAsString();
-        String token = mapper.readTree(body).get("token").asString();
+        User savedUser = userRepo.findByEmail(input.email()).orElseThrow();
 
         mockMvc.perform(get("/users/me")
                         .headers(header -> header.setBearerAuth(token)))
@@ -90,7 +84,6 @@ public class UserControllerIntegrationTest {
                 .andExpect(jsonPath("$.fullName").value(savedUser.getFullName()))
                 .andExpect(jsonPath("$.createdAt").exists())
                 .andExpect(jsonPath("$.password").doesNotExist());
-
     }
 
     @Test
@@ -106,5 +99,35 @@ public class UserControllerIntegrationTest {
                         .content(mapper.writeValueAsString(sameEmail))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    @Transactional
+    void shouldValidateTheTokenWithUserSignedIn() throws Exception {
+        RegisterUserDto input = new RegisterUserDto(
+                "joaodasilva@gmail.com", "Joao Da Silva", "joao123");
+
+        String token = registerLogInAndAuthenticateUser(input);
+        User savedUser = userRepo.findByEmail(input.email()).orElseThrow();
+
+        mockMvc.perform(get("/users")
+                .headers(header -> header.setBearerAuth(token)))
+                .andExpect(status().isForbidden());
+    }
+
+    private String registerLogInAndAuthenticateUser(RegisterUserDto input) throws Exception {
+        User savedUser = userRepo.save(
+                new User(input.fullName(), input.email(), passwordEncoder.encode(input.password())));
+
+        LoginUserDto loginUserDto = new LoginUserDto(savedUser.getUsername(), input.password());
+
+        MockHttpServletResponse response = mockMvc.perform(post("/auth/login")
+                        .content(mapper.writeValueAsString(loginUserDto))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn().getResponse();
+
+        String body = response.getContentAsString();
+        return mapper.readTree(body).get("token").asString();
     }
 }

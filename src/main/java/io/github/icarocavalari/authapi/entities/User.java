@@ -2,15 +2,14 @@ package io.github.icarocavalari.authapi.entities;
 
 
 
+import io.github.icarocavalari.authapi.repositories.RoleRepository;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Table(name = "users")
 @Entity
@@ -28,6 +27,13 @@ public class User implements UserDetails {
 
     @Column(nullable = false)
     private String password;
+
+    @ManyToMany
+    @JoinTable(
+            name = "users_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set<Role> roles = new HashSet<>();
 
     @CreationTimestamp
     @Column(updatable = false, name = "created_at")
@@ -93,6 +99,10 @@ public class User implements UserDetails {
         return email;
     }
 
+    public Set<Role> getRoles() {
+        return roles;
+    }
+
     public Date getCreatedAt() {
         return createdAt;
     }
@@ -113,7 +123,12 @@ public class User implements UserDetails {
         this.password = password;
     }
 
+    public void addRole(Role role) {
+        roles.add(role);
+    }
+
     public void setUpdatedAt(Date date) {
         this.updatedAt = date;
     }
+
 }

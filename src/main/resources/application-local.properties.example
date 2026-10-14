@@ -1,4 +1,4 @@
-# Chave secreta para assinar os tokens JWT (Base64, mínimo de 256 bits).
+# Chave secreta para assinar os tokens JWT
 # Gere a sua com: openssl rand -base64 32
 jwt.secret-key=sua-chave-aqui
 
@@ -9,3 +9,7 @@ jwt.expiration.time=900000
 spring.datasource.url=jdbc:mysql://localhost:3307/taskdb?serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false
 spring.datasource.username=root
 spring.datasource.password=secret
+
+# Credenciais para criar a role de super admin
+super-admin.email=algum-email-aqui
+super-admin.password=alguma-senha-aqui
