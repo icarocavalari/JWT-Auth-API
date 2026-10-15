@@ -23,7 +23,7 @@ public class RoleSeeder implements ApplicationRunner {
 
 
     public RoleSeeder(RoleRepository roleRepo, UserRepository userRepo, PasswordEncoder passwordEncoder, @Value("${super-admin.email}") String email,
-                      @Value("${super-admin.password") String password) {
+                      @Value("${super-admin.password}") String password) {
         this.roleRepo = roleRepo;
         this.userRepo = userRepo;
         this.passwordEncoder = passwordEncoder;
@@ -38,8 +38,10 @@ public class RoleSeeder implements ApplicationRunner {
     }
 
     private void seedRoles() {
+        // Extraindo todos as roles
         RoleEnum[] roles = RoleEnum.values();
 
+        // Inicilizando as roles que não foram inicializadas ainda
         for (RoleEnum roleEnum: roles) {
             if (roleRepo.findByName(roleEnum).isEmpty()) {
                 roleRepo.save(new Role(roleEnum));
@@ -48,6 +50,7 @@ public class RoleSeeder implements ApplicationRunner {
     }
 
     private void seedSuperAdmin() {
+        // Criando o super admin
         if (userRepo.findByEmail(email).isEmpty()) {
             User superAdmin = new User("Super Admin", email, passwordEncoder.encode(password));
             Role role = roleRepo.findByName(RoleEnum.SUPER_ADMIN).orElseThrow();

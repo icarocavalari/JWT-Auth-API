@@ -17,13 +17,9 @@ public class UserService {
     }
 
     public List<UserDto> allUsers() {
-        List<UserDto> users = new ArrayList<>();
-
-        for (User user: userRepository.findAll()) {
-            users.add(new UserDto(user.getId(), user.getUsername(), user.getFullName(), user.getCreatedAt()));
-        }
-
-        return users;
+        return userRepository.findAll().stream()
+                .map(user -> new UserDto(user.getId(), user.getUsername(), user.getFullName(), user.getCreatedAt()))
+                .toList();
     }
 
     public UserDto getUser(Object principal) {
