@@ -84,6 +84,13 @@ public class GlobalExceptionHandler {
         return detail;
     }
 
+    @ExceptionHandler(UserNotFoundException.class)
+    public ProblemDetail handleUserNotFound(UserNotFoundException exception) {
+        ProblemDetail detail = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        detail.setProperty("description", "User was not found");
+        return detail;
+    }
+
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleUnexpected(Exception exception) {
         log.error("Unexpected error", exception);
