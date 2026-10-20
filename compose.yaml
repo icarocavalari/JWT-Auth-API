@@ -4,8 +4,8 @@ services:
     ports:
       - "3307:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
-      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD:-demo-password}
+      - MYSQL_DATABASE=${DB_NAME:-authapi}
     volumes:
       - db-data:/var/lib/mysql
     healthcheck:
@@ -22,13 +22,13 @@ services:
       mysql:
         condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${DB_NAME}?serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${DB_NAME:-authapi}?serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false
       - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-      - JWT_SECRETKEY=${JWT_SECRETKEY}
-      - JWT_EXPIRATION_TIME=${JWT_EXPIRATION_TIME}
-      - SUPERADMIN_EMAIL=${SUPERADMIN_EMAIL}
-      - SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-demo-password}
+      - JWT_SECRETKEY=${JWT_SECRETKEY:-OuWxYDqvrJWE+4KiyL6KvVQ4OANcrsm/ctAdaUiKtoQ=}
+      - JWT_EXPIRATION_TIME=${JWT_EXPIRATION_TIME:-900000}
+      - SUPERADMIN_EMAIL=${SUPERADMIN_EMAIL:-superadmin@authapi.local}
+      - SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD:-SuperAdmin@123}
 
 volumes:
   db-data:

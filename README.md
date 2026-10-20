@@ -1,6 +1,6 @@
 # 🔐 JWT Auth API
 
-[![Java CI with Maven](https://github.com/icarocavalari/JWT-Auth-API/actions/workflows/ci.yml/badge.svg)](https://github.com/icarocavalari/JWT-Auth-API/actions/workflows/ci.yml)
+[![Java CI/CD with Maven](https://github.com/icarocavalari/JWT-Auth-API/actions/workflows/ci.yml/badge.svg)](https://github.com/icarocavalari/JWT-Auth-API/actions/workflows/ci.yml)
 
 API REST de autenticação stateless com JWT e autorização por roles, construída com Spring Security.
 
@@ -10,9 +10,9 @@ O usuário se cadastra, faz login, recebe um token JWT e o usa para acessar as r
 
 - Cadastro e login com senha codificada e token validado a cada requisição por um filtro próprio.
 - Três roles: `USER` (padrão no cadastro), `ADMIN` e `SUPER_ADMIN`. O super admin é criado automaticamente na inicialização e é o único que pode promover usuários a admin.
-- Respostas de erro padronizadas, sem expor detalhes internos: 401, 403, 404 e 409.
+- Respostas de erro padronizadas, sem expor detalhes internos.
 - Documentação interativa com Swagger UI, com suporte a autenticação via token.
-- Aplicação inteira containerizada, com testes rodando automaticamente no CI.
+- Aplicação inteira containerizada, com pipeline de CI/CD: os testes rodam a cada push e, se passarem, a imagem Docker é publicada automaticamente no GitHub Container Registry.
 
 ## 🛠 Stack tecnológica
 
@@ -27,18 +27,17 @@ O usuário se cadastra, faz login, recebe um token JWT e o usa para acessar as r
 - MySQL 8
 
 **Documentação de API**
-- springdoc-openapi (Swagger UI)
+- SpringDoc OpenAPI (Swagger UI)
 
 **Testes**
 - JUnit 5
 - Mockito
-- MockMvc
 - Testcontainers
 
 **Infraestrutura & DevOps**
 - Docker (build multi-stage)
 - Docker Compose
-- GitHub Actions
+- GitHub Actions (CI + publicação da imagem no GHCR)
 
 ## 🔌 Endpoints da API
 
@@ -56,25 +55,29 @@ Nas rotas protegidas, o token vai no header `Authorization: Bearer <token>`.
 
 ### Pré-requisitos
 
-- Docker e Docker Compose
+- Docker
 
 ### Passos
 
 ```bash
 git clone https://github.com/icarocavalari/JWT-Auth-API.git
 cd JWT-Auth-API
-cp .env.example .env
-```
-
-Preencha o `.env` com os valores. A chave do JWT pode ser gerada com `openssl rand -base64 32`. Depois:
-
-```bash
 docker compose up --build
 ```
 
-A API fica disponível em `http://localhost:8005`.
+A API fica disponível em `http://localhost:8005`, e a documentação interativa, em `http://localhost:8005/swagger-ui.html`.
 
-A documentação interativa fica em `http://localhost:8005/swagger-ui.html`. Para testar as rotas protegidas, faça login, copie o token e use o botão **Authorize**.
+### Usuário de demonstração
+
+O super admin é criado automaticamente na primeira inicialização:
+
+| Email | Senha |
+|---|---|
+| `superadmin@authapi.local` | `SuperAdmin@123` |
+
+Para testar as roles pelo Swagger: cadastre um usuário em `/auth/signup`, faça login com o super admin, copie o token e use o botão **Authorize**. Com ele, é possível listar os usuários e promover o novo usuário a admin.
+
+> Todos os valores de configuração (credenciais do banco, chave do JWT e do super admin) têm padrões de demonstração definidos no `compose.yaml`, apenas para facilitar a execução local. Para sobrescrevê-los, copie o `.env.example` para `.env` e preencha os valores. Em qualquer ambiente real, eles devem ser definidos por variáveis de ambiente.
 
 ## 🧪 Testes automatizados
 
@@ -89,7 +92,7 @@ Os testes de integração sobem um MySQL descartável, então basta ter o Docker
 ./mvnw verify
 ```
 
-Eles também rodam automaticamente no GitHub Actions a cada push na `main`.
+No GitHub Actions, eles rodam a cada push e Pull Request na `main`. Nos pushes, se todos passarem, a imagem da aplicação é construída e publicada no GHCR com duas tags: `latest` e o hash do commit.
 
 ## 💡 Aprendizados
 
