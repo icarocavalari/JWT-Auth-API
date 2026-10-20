@@ -7,6 +7,7 @@ import io.github.icarocavalari.authapi.exceptions.UserNotFoundException;
 import io.github.icarocavalari.authapi.repositories.RoleRepository;
 import io.github.icarocavalari.authapi.repositories.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +29,7 @@ public class UserService {
                 .toList();
     }
 
+    @Transactional
     public UserDto createAdmin(Long id) {
         User user = userRepository.findById(id).orElseThrow(() ->
                 new UserNotFoundException("User was not found"));
