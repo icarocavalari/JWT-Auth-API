@@ -2,33 +2,57 @@
 
 [![Java CI with Maven](https://github.com/icarocavalari/JWT-Auth-API/actions/workflows/ci.yml/badge.svg)](https://github.com/icarocavalari/JWT-Auth-API/actions/workflows/ci.yml)
 
-API de autenticação com JWT que construí para entender como funciona, na prática, a autenticação stateless com Spring Security. O usuário se cadastra, faz login e recebe um token, que depois é usado para acessar as rotas protegidas.
+API REST de autenticação stateless com JWT e autorização por roles, construída com Spring Security para entender na prática como esse fluxo funciona: o usuário se cadastra, faz login, recebe um token e o usa para acessar as rotas protegidas de acordo com o seu papel.
 
-Além da autenticação em si (o filtro que valida o token a cada requisição e a configuração do Spring Security em volta dele), o projeto foi onde pratiquei testes em duas camadas:
+**Stack:** Java, Spring Boot, Spring Security, Spring Data JPA, MySQL, JJWT, JUnit 5, Mockito, Testcontainers, Docker, Docker Compose e GitHub Actions.
 
-- **Testes unitários** dos services com JUnit e Mockito, cobrindo geração e validação do token (expirado, adulterado, assinado com outra chave), cadastro com senha codificada e email duplicado, e os casos de falha do login.
-- **Testes de integração** dos endpoints com MockMvc, passando pela cadeia de filtros real do Spring Security. Eles conferem os status HTTP (401 sem token ou com token inválido, 409 para email duplicado) e garantem que a senha nunca aparece no JSON das respostas.
+## Funcionalidades
 
-Escrevendo esses testes, ficaram alguns aprendizados:
+- Cadastro e login com senha codificada e token JWT validado a cada requisição por um filtro próprio.
+- Três roles: `USER` (padrão no cadastro), `ADMIN` e `SUPER_ADMIN`. O super admin é criado automaticamente na inicialização e é o único que pode promover usuários a admin.
+- Respostas de erro padronizadas, sem expor detalhes internos: 401, 403, 404 e 409.
+- **Testes unitários** dos services com JUnit e Mockito: token expirado, adulterado ou assinado com outra chave, cadastro e falhas de login.
+- **Testes de integração** dos endpoints com MockMvc e Testcontainers, passando pela cadeia de filtros real do Spring Security.
+- CI no GitHub Actions e aplicação inteira containerizada.
 
-- **Testes de integração pegam o que os unitários não pegam:** Foram eles que mostraram que requisições sem token respondiam 403 em vez de 401 e que um token malformado derrubava a API com erro 500.
-- **Testes não devem depender do ambiente:** Com Testcontainers, eles rodam iguais na minha máquina e no CI.
-- **Configuração muda por ambiente:** Separei as propriedades em perfis (`local` e `test`), com a chave real do JWT só na minha máquina e uma chave falsa para os testes e o CI.
+## Endpoints
 
-Usei Java 17, Spring Boot 4, Spring Security, Spring Data JPA, MySQL, Docker Compose, a biblioteca JJWT, JUnit 5, Mockito, Testcontainers e GitHub Actions.
+| Método | Rota | Acesso | Descrição |
+|---|---|---|---|
+| `POST` | `/auth/signup` | Público | Cadastra um usuário com a role `USER` |
+| `POST` | `/auth/login` | Público | Retorna o token JWT |
+| `GET` | `/users/me` | Autenticado | Dados do usuário logado |
+| `GET` | `/users` | `ADMIN`, `SUPER_ADMIN` | Lista todos os usuários |
+| `PUT` | `/users/{id}/admin` | `SUPER_ADMIN` | Promove um usuário a admin |
+
+Nas rotas protegidas, o token vai no header `Authorization: Bearer <token>`.
 
 ## Como rodar
 
-Você vai precisar de Java 17 e Docker.
+Você só precisa do Docker.
 
-O banco é um MySQL 8 configurado no `compose.yaml`, na raiz do projeto: basta subir ele com o Docker Compose. Os dados ficam guardados em um volume, então não se perdem quando o container é desligado.
+1. Copie o `.env.example` para `.env` e preencha os valores. A chave do JWT pode ser gerada com `openssl rand -base64 32`.
+2. Suba a aplicação e o banco:
 
-Na pasta raiz tem um `application-local.properties.example` com as chaves necessárias: copie e mova o arquivo para `src/main/resources`, renomeie tirando o `.example` e preencha com os dados do banco (os mesmos definidos no `compose.yaml`) e uma chave secreta própria para o JWT.
+```bash
+docker compose up --build
+```
 
-Com isso pronto, é só subir a aplicação pelo Maven Wrapper: ./mvnw spring-boot:run
-
-A API roda na porta 8005.
+A API fica disponível em `http://localhost:8005`.
 
 ## Testes
 
-Os testes não dependem do banco local nem do `application-local.properties`: os de integração sobem um MySQL próprio e descartável com Testcontainers, então basta ter o Docker rodando. Eles também rodam automaticamente no GitHub Actions a cada push na `main`.
+Os testes de integração sobem um MySQL descartável com Testcontainers, então basta ter o Docker rodando:
+
+```bash
+./mvnw verify
+```
+
+Eles também rodam automaticamente no GitHub Actions a cada push na `main`.
+
+## Aprendizados
+
+- **Testes de integração pegam o que os unitários não pegam:** foram eles que revelaram que requisições sem token respondiam 403 em vez de 401, e que um token malformado derrubava a API com erro 500.
+- **O ambiente de teste também pode esconder bugs:** o login lançava `LazyInitializationException` na aplicação real, mas os testes passavam porque o `@Transactional` mantinha a sessão do Hibernate aberta. Resolvi carregando as roles com `@EntityGraph`.
+- **Testes não devem depender do ambiente:** com Testcontainers e perfis de configuração separados, eles rodam iguais na minha máquina e no CI, sem nenhum segredo real.
+- **Uma imagem Docker deve carregar só o que precisa para rodar:** o Dockerfile usa build em dois estágios, com JDK e Maven só para gerar o `.jar` e apenas o JRE na imagem final.
