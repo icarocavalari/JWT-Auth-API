@@ -11,6 +11,7 @@ O usuário se cadastra, faz login, recebe um token JWT e o usa para acessar as r
 - Cadastro e login com senha codificada e token validado a cada requisição por um filtro próprio.
 - Três roles: `USER` (padrão no cadastro), `ADMIN` e `SUPER_ADMIN`. O super admin é criado automaticamente na inicialização e é o único que pode promover usuários a admin.
 - Respostas de erro padronizadas, sem expor detalhes internos: 401, 403, 404 e 409.
+- Documentação interativa com Swagger UI, com suporte a autenticação via token.
 - Aplicação inteira containerizada, com testes rodando automaticamente no CI.
 
 ## 🛠 Stack tecnológica
@@ -24,6 +25,9 @@ O usuário se cadastra, faz login, recebe um token JWT e o usa para acessar as r
 
 **Banco de dados**
 - MySQL 8
+
+**Documentação de API**
+- springdoc-openapi (Swagger UI)
 
 **Testes**
 - JUnit 5
@@ -70,6 +74,8 @@ docker compose up --build
 
 A API fica disponível em `http://localhost:8005`.
 
+A documentação interativa fica em `http://localhost:8005/swagger-ui.html`. Para testar as rotas protegidas, faça login, copie o token e use o botão **Authorize**.
+
 ## 🧪 Testes automatizados
 
 Os testes cobrem duas camadas:
@@ -88,6 +94,6 @@ Eles também rodam automaticamente no GitHub Actions a cada push na `main`.
 ## 💡 Aprendizados
 
 - **Testes de integração pegam o que os unitários não pegam:** foram eles que revelaram que requisições sem token respondiam 403 em vez de 401, e que um token malformado derrubava a API com erro 500.
-- **O ambiente de teste também pode esconder bugs:** o login lançava `LazyInitializationException` na aplicação real, mas os testes passavam porque o `@Transactional` mantinha a sessão do Hibernate aberta. Resolvi carregando as roles com `@EntityGraph`.
+- **O ambiente de teste também pode esconder bugs:** duas vezes a aplicação lançou `LazyInitializationException` (no login e na promoção a admin) enquanto todos os testes passavam, porque o `@Transactional` dos testes mantinha a sessão do Hibernate aberta. No login, resolvi carregando as roles junto com o usuário (`@EntityGraph`); na promoção, tornando o método do service transacional.
 - **Testes não devem depender do ambiente:** com Testcontainers e perfis de configuração separados, eles rodam iguais na minha máquina e no CI, sem nenhum segredo real.
 - **Uma imagem Docker deve carregar só o que precisa para rodar:** o build em dois estágios usa JDK e Maven só para gerar o `.jar`, e a imagem final leva apenas o JRE.
