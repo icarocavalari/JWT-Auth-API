@@ -23,7 +23,7 @@ Você vai precisar de Java 17 e Docker.
 
 O banco é um MySQL 8 configurado no `compose.yaml`, na raiz do projeto: basta subir ele com o Docker Compose. Os dados ficam guardados em um volume, então não se perdem quando o container é desligado.
 
-Na pasta `src/main/resources` tem um `application-local.properties.example` com as chaves necessárias: copie esse arquivo, renomeie tirando o `.example` e preencha com os dados do banco (os mesmos definidos no `compose.yaml`) e uma chave secreta própria para o JWT.
+Na pasta raiz tem um `application-local.properties.example` com as chaves necessárias: copie e mova o arquivo para `src/main/resources`, renomeie tirando o `.example` e preencha com os dados do banco (os mesmos definidos no `compose.yaml`) e uma chave secreta própria para o JWT.
 
 Com isso pronto, é só subir a aplicação pelo Maven Wrapper: ./mvnw spring-boot:run
 

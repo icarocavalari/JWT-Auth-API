@@ -9,7 +9,7 @@ target/
 /postman/
 
 application-local.properties
-
+.env
 
 ### STS ###
 .apt_generated
