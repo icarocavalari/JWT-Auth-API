@@ -1,23 +1,44 @@
-# JWT Auth API
+# 🔐 JWT Auth API
 
 [![Java CI with Maven](https://github.com/icarocavalari/JWT-Auth-API/actions/workflows/ci.yml/badge.svg)](https://github.com/icarocavalari/JWT-Auth-API/actions/workflows/ci.yml)
 
-API REST de autenticação stateless com JWT e autorização por roles, construída com Spring Security para entender na prática como esse fluxo funciona: o usuário se cadastra, faz login, recebe um token e o usa para acessar as rotas protegidas de acordo com o seu papel.
+API REST de autenticação stateless com JWT e autorização por roles, construída com Spring Security.
 
-**Stack:** Java, Spring Boot, Spring Security, Spring Data JPA, MySQL, JJWT, JUnit 5, Mockito, Testcontainers, Docker, Docker Compose e GitHub Actions.
+## 🎯 Sobre o projeto
 
-## Funcionalidades
+O usuário se cadastra, faz login, recebe um token JWT e o usa para acessar as rotas protegidas de acordo com o seu papel. Construí o projeto para entender na prática como esse fluxo funciona no Spring Security e para praticar testes em duas camadas.
 
-- Cadastro e login com senha codificada e token JWT validado a cada requisição por um filtro próprio.
+- Cadastro e login com senha codificada e token validado a cada requisição por um filtro próprio.
 - Três roles: `USER` (padrão no cadastro), `ADMIN` e `SUPER_ADMIN`. O super admin é criado automaticamente na inicialização e é o único que pode promover usuários a admin.
 - Respostas de erro padronizadas, sem expor detalhes internos: 401, 403, 404 e 409.
-- **Testes unitários** dos services com JUnit e Mockito: token expirado, adulterado ou assinado com outra chave, cadastro e falhas de login.
-- **Testes de integração** dos endpoints com MockMvc e Testcontainers, passando pela cadeia de filtros real do Spring Security.
-- CI no GitHub Actions e aplicação inteira containerizada.
+- Aplicação inteira containerizada, com testes rodando automaticamente no CI.
 
-## Endpoints
+## 🛠 Stack tecnológica
 
-| Método | Rota | Acesso | Descrição |
+**Backend**
+- Java 17
+- Spring Boot 4
+- Spring Security
+- Spring Data JPA
+- JJWT
+
+**Banco de dados**
+- MySQL 8
+
+**Testes**
+- JUnit 5
+- Mockito
+- MockMvc
+- Testcontainers
+
+**Infraestrutura & DevOps**
+- Docker (build multi-stage)
+- Docker Compose
+- GitHub Actions
+
+## 🔌 Endpoints da API
+
+| Método | Endpoint | Acesso | Descrição |
 |---|---|---|---|
 | `POST` | `/auth/signup` | Público | Cadastra um usuário com a role `USER` |
 | `POST` | `/auth/login` | Público | Retorna o token JWT |
@@ -27,12 +48,21 @@ API REST de autenticação stateless com JWT e autorização por roles, constru�
 
 Nas rotas protegidas, o token vai no header `Authorization: Bearer <token>`.
 
-## Como rodar
+## 🚀 Como rodar localmente
 
-Você só precisa do Docker.
+### Pré-requisitos
 
-1. Copie o `.env.example` para `.env` e preencha os valores. A chave do JWT pode ser gerada com `openssl rand -base64 32`.
-2. Suba a aplicação e o banco:
+- Docker e Docker Compose
+
+### Passos
+
+```bash
+git clone https://github.com/icarocavalari/JWT-Auth-API.git
+cd JWT-Auth-API
+cp .env.example .env
+```
+
+Preencha o `.env` com os valores. A chave do JWT pode ser gerada com `openssl rand -base64 32`. Depois:
 
 ```bash
 docker compose up --build
@@ -40,9 +70,14 @@ docker compose up --build
 
 A API fica disponível em `http://localhost:8005`.
 
-## Testes
+## 🧪 Testes automatizados
 
-Os testes de integração sobem um MySQL descartável com Testcontainers, então basta ter o Docker rodando:
+Os testes cobrem duas camadas:
+
+- **Unitários**, com JUnit e Mockito: token expirado, adulterado ou assinado com outra chave, cadastro com senha codificada e role padrão, email duplicado e falhas de login.
+- **Integração**, com MockMvc e Testcontainers: os endpoints passam pela cadeia de filtros real do Spring Security, conferindo os status HTTP de cada cenário e garantindo que a senha nunca aparece nas respostas.
+
+Os testes de integração sobem um MySQL descartável, então basta ter o Docker rodando:
 
 ```bash
 ./mvnw verify
@@ -50,9 +85,9 @@ Os testes de integração sobem um MySQL descartável com Testcontainers, então
 
 Eles também rodam automaticamente no GitHub Actions a cada push na `main`.
 
-## Aprendizados
+## 💡 Aprendizados
 
 - **Testes de integração pegam o que os unitários não pegam:** foram eles que revelaram que requisições sem token respondiam 403 em vez de 401, e que um token malformado derrubava a API com erro 500.
 - **O ambiente de teste também pode esconder bugs:** o login lançava `LazyInitializationException` na aplicação real, mas os testes passavam porque o `@Transactional` mantinha a sessão do Hibernate aberta. Resolvi carregando as roles com `@EntityGraph`.
 - **Testes não devem depender do ambiente:** com Testcontainers e perfis de configuração separados, eles rodam iguais na minha máquina e no CI, sem nenhum segredo real.
-- **Uma imagem Docker deve carregar só o que precisa para rodar:** o Dockerfile usa build em dois estágios, com JDK e Maven só para gerar o `.jar` e apenas o JRE na imagem final.
+- **Uma imagem Docker deve carregar só o que precisa para rodar:** o build em dois estágios usa JDK e Maven só para gerar o `.jar`, e a imagem final leva apenas o JRE.
