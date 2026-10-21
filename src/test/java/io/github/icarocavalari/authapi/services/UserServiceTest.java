@@ -8,7 +8,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
+import java.awt.print.Pageable;
+import java.util.Comparator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,12 +30,11 @@ public class UserServiceTest {
         User first = new User("First user test", "first@example.com", "123123");
         User second = new User("Second user test", "second@example.com", "321321");
 
-        when(userRepo.findAll()).thenReturn(List.of(first, second));
+        PageRequest pageable = PageRequest.of(0, 10, Sort.by("id"));
+        when(userRepo.findAll(pageable)).thenReturn(new PageImpl<>(List.of(first, second)));
 
-        List<UserDto> usersFromService = userService.allUsers();
 
-        assertThat(usersFromService.size()).isEqualTo(2);
-
+        Page<UserDto> usersFromService = userService.allUsers(pageable);
 
         assertThat(usersFromService)
                 .extracting(UserDto::username)

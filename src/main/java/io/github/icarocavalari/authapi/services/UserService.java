@@ -6,12 +6,15 @@ import io.github.icarocavalari.authapi.entities.User;
 import io.github.icarocavalari.authapi.exceptions.UserNotFoundException;
 import io.github.icarocavalari.authapi.repositories.RoleRepository;
 import io.github.icarocavalari.authapi.repositories.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -23,10 +26,9 @@ public class UserService {
         this.roleRepository = roleRepository;
     }
 
-    public List<UserDto> allUsers() {
-        return userRepository.findAll().stream()
-                .map(user -> new UserDto(user.getId(), user.getUsername(), user.getFullName(), user.getCreatedAt()))
-                .toList();
+    public Page<UserDto> allUsers(Pageable pageable) {
+        return userRepository.findAll(pageable)
+                .map(user -> new UserDto(user.getId(), user.getUsername(), user.getFullName(), user.getCreatedAt()));
     }
 
     @Transactional

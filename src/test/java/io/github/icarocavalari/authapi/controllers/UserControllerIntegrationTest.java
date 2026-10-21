@@ -23,11 +23,14 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static io.github.icarocavalari.authapi.entities.RoleEnum.ADMIN;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -141,6 +144,71 @@ public class UserControllerIntegrationTest {
 
     @Test
     @Transactional
+    void shouldReturnAllUsersPaged() throws Exception {
+        String token = registerLogInAndAuthenticateUser(RoleEnum.ADMIN);
+
+        mockMvc.perform(get("/users")
+                        .headers(header -> header.setBearerAuth(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.page.totalElements").exists());
+    }
+
+    @Test
+    @Transactional
+    void shouldReturnCorrectNumberOfUsersOnPagination() throws Exception {
+        String token = registerLogInAndAuthenticateUser(ADMIN);
+
+        populateUsers();
+
+        mockMvc.perform(get("/users")
+                        .param("size", "2")
+                        .headers(header -> header.setBearerAuth(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.size").value(2))
+                .andExpect(jsonPath("$.content", hasSize(2)));
+    }
+
+    @Test
+    @Transactional
+    void shouldReturnUsersOrdered() throws Exception {
+        String token = registerLogInAndAuthenticateUser(ADMIN);
+
+        populateUsers();
+
+        mockMvc.perform(get("/users")
+                        .param("sort", "fullName,asc")
+                        .headers(header -> header.setBearerAuth(token)))
+                .andExpect(jsonPath("$.content[0].fullName").value("Aa"))
+                .andExpect(jsonPath("$.content[1].fullName").value("Ab"))
+                .andExpect(jsonPath("$.content[2].fullName").value("Ac"));
+    }
+
+    @Test
+    @Transactional
+    void shouldReturn400WhenSortingByInvalidProperty() throws Exception {
+        String token = registerLogInAndAuthenticateUser(ADMIN);
+
+        mockMvc.perform(get("/users")
+                        .param("sort", "asesafdasdfvsadgsd")
+                        .headers(header -> header.setBearerAuth(token)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @Transactional
+    void shouldNotReturnBigPageSize() throws Exception{
+        String token = registerLogInAndAuthenticateUser(ADMIN);
+
+        mockMvc.perform(get("/users")
+                        .param("size", "1000")
+                        .headers(header -> header.setBearerAuth(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.size").value(50));
+    }
+
+    @Test
+    @Transactional
     void shouldNotAllowUserCreateAdmin() throws Exception {
         String token = registerLogInAndAuthenticateUser(RoleEnum.USER);
 
@@ -211,5 +279,13 @@ public class UserControllerIntegrationTest {
         User savedUser = new User("Fabin de Cria", "fabindecria@gmail.com", passwordEncoder.encode("fabin123"));
         savedUser.addRole(roleRepo.findByName(RoleEnum.USER).orElseThrow());
         return userRepo.save(savedUser);
+    }
+
+    private void populateUsers() {
+        User second = userRepo.save(new User("Ab", "second@example.com", "second"));
+        User fourth = userRepo.save(new User("Ad", "fourth@example.com", "fourth"));
+        User first = userRepo.save(new User("Aa", "first@example.com", "first"));
+        User third = userRepo.save(new User("Ac", "third@example.com", "third"));
+        return;
     }
 }
