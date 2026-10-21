@@ -8,6 +8,13 @@ import io.github.icarocavalari.authapi.services.UserService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
+import org.springframework.data.web.SortDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -42,8 +49,10 @@ public class UserController {
             @ApiResponse(responseCode = "403", description = "User doesn't have permission to access this endpoint")})
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/users")
-    public ResponseEntity<List<UserDto>> allUsers() {
-        return ResponseEntity.ok(userService.allUsers());
+    public ResponseEntity<PagedModel<UserDto>> allUsers(
+            @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.ASC)
+            @ParameterObject Pageable pageable) {
+        return ResponseEntity.ok(new PagedModel<>(userService.allUsers(pageable)));
     }
 
     @ApiResponses(value = {
