@@ -10,6 +10,7 @@ O usuário se cadastra, faz login, recebe um token JWT e o usa para acessar as r
 
 - Cadastro e login com senha codificada e token validado a cada requisição por um filtro próprio.
 - Três roles: `USER` (padrão no cadastro), `ADMIN` e `SUPER_ADMIN`. O super admin é criado automaticamente na inicialização e é o único que pode promover usuários a admin.
+- Listagem de usuários com paginação e ordenação, com limite máximo de itens por página.
 - Respostas de erro padronizadas, sem expor detalhes internos.
 - Documentação interativa com Swagger UI, com suporte a autenticação via token.
 - Aplicação inteira containerizada, com pipeline de CI/CD: os testes rodam a cada push e, se passarem, a imagem Docker é publicada automaticamente no GitHub Container Registry.
@@ -46,10 +47,29 @@ O usuário se cadastra, faz login, recebe um token JWT e o usa para acessar as r
 | `POST` | `/auth/signup` | Público | Cadastra um usuário com a role `USER` |
 | `POST` | `/auth/login` | Público | Retorna o token JWT |
 | `GET` | `/users/me` | Autenticado | Dados do usuário logado |
-| `GET` | `/users` | `ADMIN`, `SUPER_ADMIN` | Lista todos os usuários |
+| `GET` | `/users` | `ADMIN`, `SUPER_ADMIN` | Lista os usuários com paginação e ordenação |
 | `PUT` | `/users/{id}/admin` | `SUPER_ADMIN` | Promove um usuário a admin |
 
 Nas rotas protegidas, o token vai no header `Authorization: Bearer <token>`.
+
+### Paginação e ordenação
+
+O `GET /users` aceita três query params, todos opcionais:
+
+| Parâmetro | Padrão | Descrição |
+|---|---|---|
+| `page` | `0` | Número da página, começando em 0 |
+| `size` | `10` | Itens por página (máximo de 50) |
+| `sort` | `id,asc` | Campo e direção da ordenação |
+
+```
+GET /users?page=0&size=20&sort=fullName,asc
+```
+
+- Um `size` acima de 50 é reduzido para 50, e o valor aplicado volta em `page.size` na resposta.
+- Ordenar por um campo que não existe retorna `400 Bad Request`.
+
+A resposta traz os usuários em `content` e os metadados em `page` (`size`, `number`, `totalElements` e `totalPages`).
 
 ## 🚀 Como rodar localmente
 
@@ -83,8 +103,8 @@ Para testar as roles pelo Swagger: cadastre um usuário em `/auth/signup`, faça
 
 Os testes cobrem duas camadas:
 
-- **Unitários**, com JUnit e Mockito: token expirado, adulterado ou assinado com outra chave, cadastro com senha codificada e role padrão, email duplicado e falhas de login.
-- **Integração**, com MockMvc e Testcontainers: os endpoints passam pela cadeia de filtros real do Spring Security, conferindo os status HTTP de cada cenário e garantindo que a senha nunca aparece nas respostas.
+- **Unitários**, com JUnit e Mockito: token expirado, adulterado ou assinado com outra chave, cadastro com senha codificada e role padrão, email duplicado, falhas de login e a conversão da listagem paginada para DTOs.
+- **Integração**, com MockMvc e Testcontainers: os endpoints passam pela cadeia de filtros real do Spring Security, conferindo os status HTTP de cada cenário e garantindo que a senha nunca aparece nas respostas. Na listagem, cobrem o tamanho da página, a ordenação, o limite máximo de itens e o erro para campo de ordenação inválido.
 
 Os testes de integração sobem um MySQL descartável, então basta ter o Docker rodando:
 
